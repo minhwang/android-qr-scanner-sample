@@ -2,10 +2,15 @@ package io.github.minhwang.qrscannersample;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraDevice;
+import android.hardware.camera2.CameraManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 
 import java.util.ArrayList;
 
@@ -21,6 +26,22 @@ public class MainActivity extends AppCompatActivity {
 
         if (shouldRequestPermissions()) {
             requestPermissionsWeNeed();
+        }
+
+        try { openRearCamera(); }
+        catch (Exception e) {}
+    }
+
+    private void openRearCamera() throws CameraAccessException, SecurityException {
+        CameraManager cameraManager = (CameraManager) this.getSystemService(this.CAMERA_SERVICE);
+        String[] cameras = cameraManager.getCameraIdList();
+        for (String camera:cameras) {
+            int face = cameraManager.getCameraCharacteristics(camera)
+                                    .get(CameraCharacteristics.LENS_FACING);
+
+            if (face == CameraCharacteristics.LENS_FACING_BACK) {
+                cameraManager.openCamera(camera, new CameraStateCallback(), null);
+            }
         }
     }
 
@@ -52,6 +73,23 @@ public class MainActivity extends AppCompatActivity {
                     this.permissionsDenied.remove(permissions[idx]);
                 }
             }
+        }
+    }
+
+    private class CameraStateCallback extends CameraDevice.StateCallback {
+        @Override
+        public void onOpened(CameraDevice cameraDevice) {
+            Log.d("min", "Opened");
+        }
+
+        @Override
+        public void onDisconnected(CameraDevice cameraDevice) {
+            Log.d("min", "Connected");
+        }
+
+        @Override
+        public void onError(CameraDevice cameraDevice, int i) {
+            Log.d("min", "Error");
         }
     }
 }
